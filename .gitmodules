@@ -1,0 +1,3 @@
+[submodule "References/gamedata"]
+	path = References/gamedata
+	url = https://github.com/swgoh-utils/gamedata.git

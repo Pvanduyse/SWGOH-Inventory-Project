@@ -37,6 +37,13 @@ function lookupName(table, id) {
   return name !== undefined ? name : String(id);
 }
 
+// Helper: format a raw epoch-milliseconds string (as found in expireTime) as a readable date.
+function formatEpochMillis(msString) {
+  var ms = Number(msString);
+  if (!ms) return "";
+  return Utilities.formatDate(new Date(ms), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm");
+}
+
 // 3. Process the JSON and write to sheets
 function processSWGOHData(jsonString) {
   try {
@@ -128,17 +135,38 @@ function processSWGOHData(jsonString) {
     }
     writeToSheet(ss, 'Mods', modData);
 
-    return "Success! Wrote to " + (gearData.length - 1) + " gear items, " + (matData.length - 1) + " materials, and " + (modData.length - 1) + " mods.";
+    // Process Lightspeed Tokens
+    var lstData = [['Token Instance ID', 'Type', 'Name', 'Target', 'Stars', 'Relic Level', 'Gear Tier', 'Character Level', 'Expires']];
+    if (inventory.lightspeedToken) {
+      inventory.lightspeedToken.forEach(function(token) {
+        var def = LST_DEFINITIONS[token.definitionId];
+        lstData.push([
+          forceText(token.id),
+          forceText(token.definitionId),
+          def ? def.name : String(token.definitionId),
+          def ? def.target : "",
+          def ? def.stars : "",
+          def ? def.relicLevel : "",
+          def ? def.gearTier : "",
+          def ? def.level : "",
+          formatEpochMillis(token.expireTime)
+        ]);
+      });
+    }
+    writeToSheet(ss, 'Lightspeed Tokens', lstData);
+
+    return "Success! Wrote to " + (gearData.length - 1) + " gear items, " + (matData.length - 1) + " materials, " + (modData.length - 1) + " mods, and " + (lstData.length - 1) + " lightspeed tokens.";
 
   } catch (e) {
     return "Error parsing JSON: " + e.toString();
   }
 }
 
-// Helper to create or clear a sheet, then write a 2D array to it
+// Helper to create or clear a sheet, then write a 2D array to it.
+// Always writes (even when dataArray is just the header row) so a category that's gone
+// to zero -- e.g. you use your last Lightspeed Token -- correctly clears out the sheet
+// instead of leaving stale rows from a previous import sitting there.
 function writeToSheet(spreadsheet, sheetName, dataArray) {
-  if (dataArray.length <= 1) return; // Don't write if only headers exist
-
   var sheet = spreadsheet.getSheetByName(sheetName);
   if (!sheet) {
     sheet = spreadsheet.insertSheet(sheetName);
