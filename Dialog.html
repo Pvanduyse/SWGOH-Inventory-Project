@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body { font-family: Arial, sans-serif; padding: 15px; color: #333; }
+      .section { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #ddd; }
+      .section:last-of-type { border-bottom: none; }
+      textarea { width: 100%; height: 180px; box-sizing: border-box; margin-top: 5px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;}
+      button { background-color: #1a73e8; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; font-weight: bold; width: 100%;}
+      button:hover { background-color: #1557b0; }
+      button:disabled { background-color: #ccc; cursor: not-allowed; }
+      #status { margin-top: 15px; font-weight: bold; text-align: center; }
+      label { font-weight: bold; font-size: 14px; }
+      input[type="file"] { margin-top: 5px; }
+    </style>
+  </head>
+  <body>
+    
+    <div class="section">
+      <label for="fileInput">Option A: Upload a JSON file</label><br>
+      <input type="file" id="fileInput" accept=".json, .txt" onchange="handleFileUpload(event)">
+    </div>
+
+    <div class="section">
+      <label for="jsonInput">Option B: Paste JSON text directly</label>
+      <textarea id="jsonInput" placeholder='{"name":"LordMaelstrom", ...}'></textarea>
+    </div>
+
+    <button onclick="submitJson()" id="submitBtn">Process Data</button>
+    <div id="status"></div>
+
+    <script>
+      // Automatically read the uploaded file and dump it into the textarea
+      function handleFileUpload(event) {
+        var file = event.target.files[0];
+        if (!file) return;
+        
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('jsonInput').value = e.target.result;
+          document.getElementById('status').innerText = "File loaded! Ready to process.";
+          document.getElementById('status').style.color = "green";
+        };
+        reader.readAsText(file);
+      }
+
+      function submitJson() {
+        var input = document.getElementById('jsonInput').value;
+        var statusDiv = document.getElementById('status');
+        var btn = document.getElementById('submitBtn');
+        
+        if (!input) {
+          statusDiv.innerText = "Please paste JSON or upload a file first.";
+          statusDiv.style.color = "red";
+          return;
+        }
+
+        statusDiv.innerText = "Processing... please wait.";
+        statusDiv.style.color = "#333";
+        btn.disabled = true;
+
+        google.script.run
+          .withSuccessHandler(function(message) {
+            statusDiv.innerText = message;
+            statusDiv.style.color = "green";
+            btn.disabled = false;
+            if(message.startsWith("Success")) {
+               setTimeout(function() { google.script.host.close(); }, 2000);
+            }
+          })
+          .withFailureHandler(function(error) {
+            statusDiv.innerText = "Error: " + error.message;
+            statusDiv.style.color = "red";
+            btn.disabled = false;
+          })
+          .processSWGOHData(input);
+      }
+    </script>
+  </body>
+</html>
