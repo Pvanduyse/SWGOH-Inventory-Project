@@ -1627,6 +1627,39 @@ const MOD_STAT_NAMES = {
   61: "Mastery",
 };
 
+// Mod definitionId decoding. A mod's definitionId is a 3-digit number where each
+// digit encodes an intrinsic property of the mod: digit 1 = Set, digit 2 = Pip count
+// (parsed directly, no lookup needed), digit 3 = Slot shape. These are fixed at
+// creation and don't change as the mod levels/tiers up.
+const MOD_SET_NAMES = {
+  1: "Health",
+  2: "Offense",
+  3: "Defense",
+  4: "Speed",
+  5: "Crit Chance",
+  6: "Crit Damage",
+  7: "Potency",
+  8: "Tenacity",
+};
+
+const MOD_SLOT_SHAPES = {
+  1: "Square",
+  2: "Arrow",
+  3: "Diamond",
+  4: "Triangle",
+  5: "Circle",
+  6: "Cross",
+};
+
+const MOD_SLOT_NAMES = {
+  1: "Transmitter",
+  2: "Receiver",
+  3: "Processor",
+  4: "Holo-Array",
+  5: "Data-Bus",
+  6: "Multiplexer",
+};
+
 // currency (enum int) -> display name. NOT auto-resolved -- the CurrencyType enum
 // only exposes internal category names (GRIND, PREMIUM, etc.), no direct localization
 // key like equipment/material had. Best-effort from context; entries marked (?) need

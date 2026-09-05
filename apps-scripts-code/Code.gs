@@ -44,6 +44,26 @@ function formatEpochMillis(msString) {
   return Utilities.formatDate(new Date(ms), Session.getScriptTimeZone(), "yyyy-MM-dd HH:mm");
 }
 
+// Helper: decode a mod's definitionId (a 3-digit number) into its intrinsic Set,
+// Pip count, and Slot shape/name. Falls back to blanks if the ID isn't the expected
+// 3-digit shape (e.g. new mod types added after this logic was written).
+function decodeModDefinitionId(definitionId) {
+  var idStr = String(definitionId || "");
+  if (idStr.length < 3) {
+    return { set: "", pips: "", slotShape: "", slotName: "" };
+  }
+  var setDigit = Number(idStr.charAt(0));
+  var pipsDigit = Number(idStr.charAt(1));
+  var slotDigit = Number(idStr.charAt(2));
+
+  return {
+    set: lookupName(MOD_SET_NAMES, setDigit),
+    pips: pipsDigit,
+    slotShape: lookupName(MOD_SLOT_SHAPES, slotDigit),
+    slotName: lookupName(MOD_SLOT_NAMES, slotDigit)
+  };
+}
+
 // 3. Process the JSON and write to sheets
 function processSWGOHData(jsonString) {
   try {
@@ -100,7 +120,8 @@ function processSWGOHData(jsonString) {
 
     // Process Mods
     var modData = [[
-      'Mod ID', 'Definition ID', 'Level', 'Tier', 'Locked', 'Rerolled Count',
+      'Mod ID', 'Definition ID', 'Set', 'Pips', 'Slot Shape', 'Slot Name',
+      'Level', 'Tier', 'Locked', 'Rerolled Count',
       'Primary Stat ID', 'Primary Stat Name', 'Primary Stat Value',
       'Sec 1 ID', 'Sec 1 Name', 'Sec 1 Value', 'Sec 1 Rolls',
       'Sec 2 ID', 'Sec 2 Name', 'Sec 2 Value', 'Sec 2 Rolls',
@@ -111,8 +132,11 @@ function processSWGOHData(jsonString) {
     if (inventory.unequippedMod) {
       inventory.unequippedMod.forEach(function(mod) {
         var pStat = (mod.primaryStat && mod.primaryStat.stat) ? mod.primaryStat.stat : {};
+        var modInfo = decodeModDefinitionId(mod.definitionId);
         var row = [
-          forceText(mod.id), forceText(mod.definitionId), mod.level, mod.tier, mod.locked, mod.rerolledCount || 0,
+          forceText(mod.id), forceText(mod.definitionId),
+          modInfo.set, modInfo.pips, modInfo.slotShape, modInfo.slotName,
+          mod.level, mod.tier, mod.locked, mod.rerolledCount || 0,
           pStat.unitStatId || "", lookupName(MOD_STAT_NAMES, pStat.unitStatId), pStat.unscaledDecimalValue / 100000000 || ""
         ];
 
